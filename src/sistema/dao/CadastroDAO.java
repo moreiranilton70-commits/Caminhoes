@@ -3,8 +3,6 @@ package sistema.dao;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -13,7 +11,10 @@ import sistema.model.Cadastro;
 public class CadastroDAO {
 
     public void inserir(Cadastro c) {
-        String sql = "INSERT INTO cadastro (data, placa, numeroOF, horaCadastro, numeroPager, ofTroca, status, autorizacao, horaAutorizacao, observacao, usuario) VALUES (?,?,?,?,?,?,?,?,?,?,?)";
+
+        String sql = "INSERT INTO cadastro "
+                + "(data, placa, numeroOF, horaCadastro, numeroPager, ofTroca, status, autorizacao, horaAutorizacao, observacao, usuario) "
+                + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         try (Connection conn = Conexao.conectar();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -21,7 +22,7 @@ public class CadastroDAO {
             ps.setString(1, c.getData());
             ps.setString(2, c.getPlaca());
             ps.setString(3, c.getNumeroOF());
-            ps.setLong(4, c.getHoraCadastro());
+            ps.setString(4, c.getHoraCadastro());
             ps.setString(5, c.getNumeroPager());
             ps.setString(6, c.getOfTroca());
             ps.setString(7, c.getStatus());
@@ -32,23 +33,27 @@ public class CadastroDAO {
 
             ps.executeUpdate();
 
-        } catch (SQLException e) {
+        } catch (Exception e) {
+            System.out.println("Erro ao inserir cadastro: " + e.getMessage());
             e.printStackTrace();
         }
     }
 
     public List<Cadastro> listarTodos() {
+
         List<Cadastro> lista = new ArrayList<>();
-        String sql = "SELECT * FROM cadastro";
+
+        String sql = "SELECT * FROM cadastro ORDER BY id DESC";
 
         try (Connection conn = Conexao.conectar();
-             Statement st = conn.createStatement();
-             ResultSet rs = st.executeQuery(sql)) {
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
 
             while (rs.next()) {
+
                 Cadastro c = new Cadastro();
 
-                c.setHoraCadastro(rs.getInt("id"));
+                c.setId(rs.getInt("id"));
                 c.setData(rs.getString("data"));
                 c.setPlaca(rs.getString("placa"));
                 c.setNumeroOF(rs.getString("numeroOF"));
@@ -61,44 +66,73 @@ public class CadastroDAO {
                 c.setObservacao(rs.getString("observacao"));
                 c.setUsuario(rs.getString("usuario"));
 
+                try {
+                    c.setUsuarioAlteracao(rs.getString("usuarioAlteracao"));
+                } catch (Exception e) {
+                    c.setUsuarioAlteracao("");
+                }
+
+                try {
+                    c.setHoraAlteracao(rs.getString("horaAlteracao"));
+                } catch (Exception e) {
+                    c.setHoraAlteracao("");
+                }
+
                 lista.add(c);
             }
 
-        } catch (SQLException e) {
+        } catch (Exception e) {
+            System.out.println("Erro ao listar cadastros: " + e.getMessage());
             e.printStackTrace();
         }
 
         return lista;
     }
 
-    public void atualizar(Cadastro c) {
-        String sql = "UPDATE cadastro SET data=?, placa=?, numeroOF=?, horaCadastro=?, numeroPager=?, ofTroca=?, status=?, autorizacao=?, horaAutorizacao=?, observacao=?, usuario=? WHERE id=?";
+    public boolean atualizar(Cadastro c) {
+
+        String sql = "UPDATE cadastro SET "
+                + "placa = ?, "
+                + "numeroOF = ?, "
+                + "numeroPager = ?, "
+                + "ofTroca = ?, "
+                + "status = ?, "
+                + "autorizacao = ?, "
+                + "horaAutorizacao = ?, "
+                + "observacao = ?, "
+                + "usuarioAlteracao = ?, "
+                + "horaAlteracao = ? "
+                + "WHERE id = ?";
 
         try (Connection conn = Conexao.conectar();
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
-            ps.setString(1, c.getData());
-            ps.setString(2, c.getPlaca());
-            ps.setString(3, c.getNumeroOF());
-            ps.setLong(4, c.getHoraCadastro());
-            ps.setString(5, c.getNumeroPager());
-            ps.setString(6, c.getOfTroca());
-            ps.setString(7, c.getStatus());
-            ps.setString(8, c.getAutorizacao());
-            ps.setString(9, c.getHoraAutorizacao());
-            ps.setString(10, c.getObservacao());
-            ps.setString(11, c.getUsuario());
-            ps.setInt(12, c.getHoraCadastro());
+            ps.setString(1, c.getPlaca());
+            ps.setString(2, c.getNumeroOF());
+            ps.setString(3, c.getNumeroPager());
+            ps.setString(4, c.getOfTroca());
+            ps.setString(5, c.getStatus());
+            ps.setString(6, c.getAutorizacao());
+            ps.setString(7, c.getHoraAutorizacao());
+            ps.setString(8, c.getObservacao());
+            ps.setString(9, c.getUsuarioAlteracao());
+            ps.setString(10, c.getHoraAlteracao());
+            ps.setInt(11, c.getId());
 
-            ps.executeUpdate();
+            int linhasAfetadas = ps.executeUpdate();
 
-        } catch (SQLException e) {
+            return linhasAfetadas > 0;
+
+        } catch (Exception e) {
+            System.out.println("Erro ao atualizar cadastro: " + e.getMessage());
             e.printStackTrace();
+            return false;
         }
     }
 
     public void excluir(int id) {
-        String sql = "DELETE FROM cadastro WHERE id=?";
+
+        String sql = "DELETE FROM cadastro WHERE id = ?";
 
         try (Connection conn = Conexao.conectar();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -106,7 +140,8 @@ public class CadastroDAO {
             ps.setInt(1, id);
             ps.executeUpdate();
 
-        } catch (SQLException e) {
+        } catch (Exception e) {
+            System.out.println("Erro ao excluir cadastro: " + e.getMessage());
             e.printStackTrace();
         }
     }

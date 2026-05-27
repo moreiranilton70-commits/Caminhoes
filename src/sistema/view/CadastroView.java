@@ -47,7 +47,7 @@ public class CadastroView extends JFrame {
     public CadastroView(String usuarioLogado) {
         this.usuarioLogado = usuarioLogado;
 
-        setTitle("Cadastro de Caminhões");
+        setTitle("Cadastro de Caminhões - Usuário: " + usuarioLogado);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setExtendedState(JFrame.MAXIMIZED_BOTH);
         setLayout(new BorderLayout());
@@ -177,7 +177,8 @@ public class CadastroView extends JFrame {
         });
     }
 
-    private void adicionarCampo(JPanel painel, GridBagConstraints gbc, int linha, String texto, java.awt.Component campo, Font fonteLabel) {
+    private void adicionarCampo(JPanel painel, GridBagConstraints gbc, int linha, String texto,
+                                java.awt.Component campo, Font fonteLabel) {
 
         JLabel label = new JLabel(texto);
         label.setFont(fonteLabel);
@@ -202,6 +203,8 @@ public class CadastroView extends JFrame {
 
     private void salvar() {
 
+        atualizarDataHora();
+
         if (txtPlaca.getText().trim().isEmpty()) {
             JOptionPane.showMessageDialog(this, "Informe a placa.");
             return;
@@ -210,15 +213,15 @@ public class CadastroView extends JFrame {
         Cadastro c = new Cadastro();
 
         c.setData(txtData.getText());
+        c.setPlaca(txtPlaca.getText().trim());
+        c.setNumeroOF(txtNumeroOF.getText().trim());
         c.setHoraCadastro(txtHoraCadastro.getText());
-        c.setPlaca(txtPlaca.getText());
-        c.setNumeroOF(txtNumeroOF.getText());
-        c.setNumeroPager(txtNumeroPager.getText());
-        c.setOfTroca(txtOfTroca.getText());
+        c.setNumeroPager(txtNumeroPager.getText().trim());
+        c.setOfTroca(txtOfTroca.getText().trim());
         c.setStatus(cbStatus.getSelectedItem().toString());
-        c.setAutorizacao(txtAutorizacao.getText());
-        c.setHoraAutorizacao(txtHoraAutorizacao.getText());
-        c.setObservacao(txtObservacao.getText());
+        c.setAutorizacao(txtAutorizacao.getText().trim());
+        c.setHoraAutorizacao(txtHoraAutorizacao.getText().trim());
+        c.setObservacao(txtObservacao.getText().trim());
         c.setUsuario(usuarioLogado);
 
         CadastroDAO dao = new CadastroDAO();

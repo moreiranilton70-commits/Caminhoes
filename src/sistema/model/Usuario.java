@@ -1,20 +1,54 @@
 package sistema.model;
 
 public class Usuario {
+
     private int id;
-    private String login;
+    private String usuario;
     private String senha;
-    private boolean administrador;
+    private String tipo;
 
-    public int getId() { return id; }
-    public void setId(int id) { this.id = id; }
+    public Usuario() {
+    }
 
-    public String getLogin() { return login; }
-    public void setLogin(String login) { this.login = login; }
+    public Usuario(int id, String usuario, String senha, String tipo) {
+        this.id = id;
+        this.usuario = usuario;
+        this.senha = senha;
+        this.tipo = tipo;
+    }
 
-    public String getSenha() { return senha; }
-    public void setSenha(String senha) { this.senha = senha; }
+    public int getId() {
+        return id;
+    }
 
-    public boolean isAdministrador() { return administrador; }
-    public void setAdministrador(boolean administrador) { this.administrador = administrador; }
+    public void setId(int id) {
+        this.id = id;
+    }
+
+
+    public String getUsuario() {
+        return usuario;
+    }
+
+    public void setUsuario(String usuario) {
+        this.usuario = usuario;
+    }
+
+
+    public String getSenha() {
+        return senha;
+    }
+
+    public void setSenha(String senha) {
+        this.senha = senha;
+    }
+
+
+    public String getTipo() {
+        return tipo;
+    }
+
+    public void setTipo(String tipo) {
+        this.tipo = tipo;
+    }
 }

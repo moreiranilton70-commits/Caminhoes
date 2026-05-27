@@ -1,172 +1,150 @@
 package sistema.dao;
 
-import sistema.model.Usuario;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
+import sistema.model.Usuario;
+
 public class UsuarioDAO {
 
-    public void criarTabela() {
-        String sql = "CREATE TABLE IF NOT EXISTS usuarios (" +
-                "id INTEGER PRIMARY KEY AUTOINCREMENT," +
-                "login TEXT UNIQUE NOT NULL," +
-                "senha TEXT NOT NULL," +
-                "administrador INTEGER NOT NULL)";
+    public void inserir(Usuario u) {
+
+        String sql = "INSERT INTO usuario (usuario, senha, tipo) VALUES (?, ?, ?)";
+
         try (Connection conn = Conexao.conectar();
-             Statement st = conn.createStatement()) {
-            st.execute(sql);
-        } catch (SQLException e) {
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setString(1, u.getUsuario());
+            ps.setString(2, u.getSenha());
+            ps.setString(3, u.getTipo());
+
+            ps.executeUpdate();
+
+        } catch (Exception e) {
+            System.out.println("Erro ao inserir usuário: " + e.getMessage());
             e.printStackTrace();
         }
     }
 
-    public boolean loginValido(String login, String senha) {
-        String sql = "SELECT * FROM usuarios WHERE login=? AND senha=?";
+    public boolean existeUsuario(String usuario) {
+
+        String sql = "SELECT id FROM usuario WHERE usuario = ?";
+
         try (Connection conn = Conexao.conectar();
              PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, login);
-            ps.setString(2, senha);
+
+            ps.setString(1, usuario);
+
             ResultSet rs = ps.executeQuery();
+
             return rs.next();
-        } catch (SQLException e) {
+
+        } catch (Exception e) {
+            System.out.println("Erro ao verificar usuário: " + e.getMessage());
             e.printStackTrace();
             return false;
         }
     }
 
-    public boolean isAdministrador(String login) {
-        String sql = "SELECT administrador FROM usuarios WHERE login=?";
+    public Usuario logar(String usuario, String senha) {
+
+        String sql = "SELECT * FROM usuario WHERE usuario = ? AND senha = ?";
+
         try (Connection conn = Conexao.conectar();
              PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, login);
+
+            ps.setString(1, usuario);
+            ps.setString(2, senha);
+
             ResultSet rs = ps.executeQuery();
+
             if (rs.next()) {
-                return rs.getInt("administrador") == 1;
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return false;
-    }
-
-    public void inserirUsuario(Usuario u) {
-        String sql = "INSERT INTO usuarios (login, senha, administrador) VALUES (?,?,?)";
-        try (Connection conn = Conexao.conectar();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, u.getLogin());
-            ps.setString(2, u.getSenha());
-            ps.setInt(3, u.isAdministrador() ? 1 : 0);
-            ps.executeUpdate();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
-
-    public void excluirUsuario(String login) {
-        String sql = "DELETE FROM usuarios WHERE login=?";
-        try (Connection conn = Conexao.conectar();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, login);
-            ps.executeUpdate();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
-
-    public List<Usuario> listarUsuarios() {
-        List<Usuario> lista = new ArrayList<>();
-        String sql = "SELECT * FROM usuarios";
-        try (Connection conn = Conexao.conectar();
-             Statement st = conn.createStatement();
-             ResultSet rs = st.executeQuery(sql)) {
-            while (rs.next()) {
                 Usuario u = new Usuario();
                 u.setId(rs.getInt("id"));
-                u.setLogin(rs.getString("login"));
+                u.setUsuario(rs.getString("usuario"));
                 u.setSenha(rs.getString("senha"));
-                u.setAdministrador(rs.getInt("administrador") == 1);
-                lista.add(u);
+                u.setTipo(rs.getString("tipo"));
+                return u;
             }
-        } catch (SQLException e) {
+
+        } catch (Exception e) {
+            System.out.println("Erro ao fazer login: " + e.getMessage());
             e.printStackTrace();
         }
-        return lista;
+
+        return null;
     }
-    
-    public boolean emailExiste(String email) {
-        String sql = "SELECT COUNT(*) FROM usuarios WHERE email = ?";
+
+    public List<Usuario> listarTodos() {
+
+        List<Usuario> lista = new ArrayList<>();
+
+        String sql = "SELECT id, usuario, senha, tipo FROM usuario ORDER BY usuario ASC";
 
         try (Connection conn = Conexao.conectar();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
 
-            ps.setString(1, email);
+            while (rs.next()) {
 
-            ResultSet rs = ps.executeQuery();
+                Usuario u = new Usuario();
+                u.setId(rs.getInt("id"));
+                u.setUsuario(rs.getString("usuario"));
+                u.setSenha(rs.getString("senha"));
+                u.setTipo(rs.getString("tipo"));
 
-            if (rs.next()) {
-                return rs.getInt(1) > 0;
+                lista.add(u);
             }
 
-        } catch (SQLException e) {
+        } catch (Exception e) {
+            System.out.println("Erro ao listar usuários: " + e.getMessage());
             e.printStackTrace();
         }
 
-        return false;
+        return lista;
     }
 
-    public boolean atualizarSenhaPorEmail(String email, String novaSenha) {
-        String sql = "UPDATE usuarios SET senha = ? WHERE email = ?";
+    public boolean alterarSenhaPorUsuario(String usuario, String novaSenha) {
+
+        String sql = "UPDATE usuario SET senha = ? WHERE usuario = ?";
 
         try (Connection conn = Conexao.conectar();
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
             ps.setString(1, novaSenha);
-            ps.setString(2, email);
+            ps.setString(2, usuario);
 
-            int linhas = ps.executeUpdate();
+            int linhasAfetadas = ps.executeUpdate();
 
-            return linhas > 0;
+            return linhasAfetadas > 0;
 
-        } catch (SQLException e) {
+        } catch (Exception e) {
+            System.out.println("Erro ao alterar senha: " + e.getMessage());
             e.printStackTrace();
+            return false;
         }
-
-        return false;
     }
-    
-    public boolean cadastrarUsuario(String login, String senha, String email) {
 
-        String sql = """
-                
-            INSERT INTO usuarios
-            (login, senha, email, administrador)
-            
-            VALUES (?, ?, ?, 0)
-                
-        """;
+    public boolean excluir(int id) {
+
+        String sql = "DELETE FROM usuario WHERE id = ?";
 
         try (Connection conn = Conexao.conectar();
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
-            ps.setString(1, login);
-            ps.setString(2, senha);
-            ps.setString(3, email);
+            ps.setInt(1, id);
 
-            ps.executeUpdate();
+            int linhasAfetadas = ps.executeUpdate();
 
-            return true;
+            return linhasAfetadas > 0;
 
-        } catch (SQLException e) {
-
+        } catch (Exception e) {
+            System.out.println("Erro ao excluir usuário: " + e.getMessage());
             e.printStackTrace();
-
+            return false;
         }
-
-        return false;
     }
 }

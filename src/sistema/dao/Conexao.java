@@ -2,7 +2,6 @@ package sistema.dao;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
-import java.sql.SQLException;
 
 public class Conexao {
 
@@ -11,17 +10,10 @@ public class Conexao {
     public static Connection conectar() {
 
         try {
-
-            Connection conn = DriverManager.getConnection(URL);
-
-            System.out.println("BANCO CONECTADO!");
-
-            return conn;
-
-        } catch (SQLException e) {
-
+            return DriverManager.getConnection(URL);
+        } catch (Exception e) {
+            System.out.println("Erro ao conectar no banco: " + e.getMessage());
             e.printStackTrace();
-
             return null;
         }
     }

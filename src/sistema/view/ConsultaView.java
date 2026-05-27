@@ -1,12 +1,15 @@
 package sistema.view;
 
 import java.awt.BorderLayout;
+import java.awt.Dimension;
+import java.awt.Font;
 import java.awt.GridLayout;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 import javax.swing.JButton;
 import javax.swing.JComboBox;
-import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
@@ -15,6 +18,7 @@ import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.ListSelectionModel;
 import javax.swing.table.DefaultTableModel;
 
 import sistema.dao.CadastroDAO;
@@ -24,21 +28,35 @@ public class ConsultaView extends JFrame {
 
     private JTable tabela;
     private DefaultTableModel modelo;
-    private String usuario;
 
-    public ConsultaView() {
-        this("");
+    private JButton btnAtualizar;
+    private JButton btnAlterar;
+    private JButton btnVoltar;
+
+    private String usuarioLogado;
+
+    public ConsultaView(String usuarioLogado) {
+        this.usuarioLogado = usuarioLogado;
+
+        setTitle("Consulta de Cadastros - Usuário: " + usuarioLogado);
+        setSize(1250, 650);
+        setLocationRelativeTo(null);
+        setLayout(new BorderLayout());
+
+        criarTabela();
+        criarBotoes();
+        carregarDados();
     }
 
-    public ConsultaView(String usuario) {
-        this.usuario = usuario;
+    private void criarTabela() {
 
-        setTitle("Consulta de Cadastros");
-        setSize(1000, 600);
-        setLocationRelativeTo(null);
-        setLayout(null);
+        modelo = new DefaultTableModel() {
 
-        modelo = new DefaultTableModel();
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
+        };
 
         modelo.addColumn("ID");
         modelo.addColumn("Data");
@@ -46,67 +64,88 @@ public class ConsultaView extends JFrame {
         modelo.addColumn("Placa");
         modelo.addColumn("Número OF");
         modelo.addColumn("Número Pager");
-        modelo.addColumn("OF de Troca");
+        modelo.addColumn("OF Troca");
         modelo.addColumn("Status");
         modelo.addColumn("Autorização");
         modelo.addColumn("Hora Autorização");
         modelo.addColumn("Observação");
-        modelo.addColumn("Usuário");
+        modelo.addColumn("Usuário Cadastro");
+        modelo.addColumn("Usuário Alteração");
+        modelo.addColumn("Hora Alteração");
 
         tabela = new JTable(modelo);
-        tabela.setSelectionMode(javax.swing.ListSelectionModel.SINGLE_SELECTION);
+        tabela.setFont(new Font("Arial", Font.PLAIN, 13));
+        tabela.setRowHeight(26);
+        tabela.getTableHeader().setFont(new Font("Arial", Font.BOLD, 13));
+        tabela.setAutoCreateRowSorter(true);
+        tabela.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
         JScrollPane scroll = new JScrollPane(tabela);
-        scroll.setBounds(10, 10, 960, 450);
-        add(scroll);
+        scroll.setPreferredSize(new Dimension(1200, 500));
 
-        JButton btnAtualizar = new JButton("Atualizar");
-        btnAtualizar.setBounds(10, 480, 140, 35);
-        btnAtualizar.addActionListener(e -> atualizarTabela());
-        add(btnAtualizar);
-
-        JButton btnAlterar = new JButton("Alterar Selecionado");
-        btnAlterar.setBounds(170, 480, 180, 35);
-        btnAlterar.addActionListener(e -> alterarSelecionado());
-        add(btnAlterar);
-
-        JButton btnFechar = new JButton("Fechar");
-        btnFechar.setBounds(370, 480, 120, 35);
-        btnFechar.addActionListener(e -> dispose());
-        add(btnFechar);
-
-        atualizarTabela();
+        add(scroll, BorderLayout.CENTER);
     }
 
-    private void atualizarTabela() {
+    private void criarBotoes() {
+
+        JPanel painelBotoes = new JPanel();
+
+        btnAtualizar = new JButton("Atualizar");
+        btnAtualizar.setFont(new Font("Arial", Font.BOLD, 14));
+
+        btnAlterar = new JButton("Alterar Cadastro Selecionado");
+        btnAlterar.setFont(new Font("Arial", Font.BOLD, 14));
+
+        btnVoltar = new JButton("Voltar");
+        btnVoltar.setFont(new Font("Arial", Font.BOLD, 14));
+
+        painelBotoes.add(btnAtualizar);
+        painelBotoes.add(btnAlterar);
+        painelBotoes.add(btnVoltar);
+
+        add(painelBotoes, BorderLayout.SOUTH);
+
+        btnAtualizar.addActionListener(e -> carregarDados());
+
+        btnAlterar.addActionListener(e -> alterarCadastro());
+
+        btnVoltar.addActionListener(e -> dispose());
+    }
+
+    private void carregarDados() {
+
         modelo.setRowCount(0);
 
         CadastroDAO dao = new CadastroDAO();
-        List<Cadastro> cadastros = dao.listarTodos();
+        List<Cadastro> lista = dao.listarTodos();
 
-        for (Cadastro c : cadastros) {
+        for (Cadastro c : lista) {
+
             modelo.addRow(new Object[] {
-                    c.getHoraCadastro(),
-                    c.getData(),
-                    c.getHoraCadastro(),
-                    c.getPlaca(),
-                    c.getNumeroOF(),
-                    c.getNumeroPager(),
-                    c.getOfTroca(),
-                    c.getStatus(),
-                    c.getAutorizacao(),
-                    c.getHoraAutorizacao(),
-                    c.getObservacao(),
-                    c.getUsuario()
+                    c.getId(),
+                    valorSeguro(c.getData()),
+                    valorSeguro(c.getHoraCadastro()),
+                    valorSeguro(c.getPlaca()),
+                    valorSeguro(c.getNumeroOF()),
+                    valorSeguro(c.getNumeroPager()),
+                    valorSeguro(c.getOfTroca()),
+                    valorSeguro(c.getStatus()),
+                    valorSeguro(c.getAutorizacao()),
+                    valorSeguro(c.getHoraAutorizacao()),
+                    valorSeguro(c.getObservacao()),
+                    valorSeguro(c.getUsuario()),
+                    valorSeguro(c.getUsuarioAlteracao()),
+                    valorSeguro(c.getHoraAlteracao())
             });
         }
     }
 
-    private void alterarSelecionado() {
+    private void alterarCadastro() {
+
         int linhaSelecionada = tabela.getSelectedRow();
 
         if (linhaSelecionada == -1) {
-            JOptionPane.showMessageDialog(this, "Selecione uma linha para alterar.");
+            JOptionPane.showMessageDialog(this, "Selecione um cadastro para alterar.");
             return;
         }
 
@@ -114,67 +153,12 @@ public class ConsultaView extends JFrame {
 
         int id = Integer.parseInt(modelo.getValueAt(linhaModelo, 0).toString());
 
-        String data = valor(linhaModelo, 1);
-        String horaCadastro = valor(linhaModelo, 2);
-        String placa = valor(linhaModelo, 3);
-        String numeroOF = valor(linhaModelo, 4);
-        String numeroPager = valor(linhaModelo, 5);
-        String ofTroca = valor(linhaModelo, 6);
-        String status = valor(linhaModelo, 7);
-        String autorizacao = valor(linhaModelo, 8);
-        String horaAutorizacao = valor(linhaModelo, 9);
-        String observacao = valor(linhaModelo, 10);
-        String usuarioCadastro = valor(linhaModelo, 11);
-
-        abrirTelaAlteracao(
-                id,
-                data,
-                horaCadastro,
-                placa,
-                numeroOF,
-                numeroPager,
-                ofTroca,
-                status,
-                autorizacao,
-                horaAutorizacao,
-                observacao,
-                usuarioCadastro
-        );
-    }
-
-    private String valor(int linha, int coluna) {
-        Object valor = modelo.getValueAt(linha, coluna);
-        return valor == null ? "" : valor.toString();
-    }
-
-    private void abrirTelaAlteracao(
-            int id,
-            String data,
-            String horaCadastro,
-            String placa,
-            String numeroOF,
-            String numeroPager,
-            String ofTroca,
-            String status,
-            String autorizacao,
-            String horaAutorizacao,
-            String observacao,
-            String usuarioCadastro
-    ) {
-
-        JDialog dialog = new JDialog(this, "Alterar Cadastro", true);
-        dialog.setSize(500, 600);
-        dialog.setLocationRelativeTo(this);
-        dialog.setLayout(new BorderLayout());
-
-        JPanel painel = new JPanel(new GridLayout(11, 2, 8, 8));
-
-        JTextField txtData = new JTextField(data);
-        JTextField txtHoraCadastro = new JTextField(horaCadastro);
-        JTextField txtPlaca = new JTextField(placa);
-        JTextField txtNumeroOF = new JTextField(numeroOF);
-        JTextField txtNumeroPager = new JTextField(numeroPager);
-        JTextField txtOfTroca = new JTextField(ofTroca);
+        JTextField txtData = new JTextField(valorTabela(linhaModelo, 1));
+        JTextField txtHoraCadastro = new JTextField(valorTabela(linhaModelo, 2));
+        JTextField txtPlaca = new JTextField(valorTabela(linhaModelo, 3));
+        JTextField txtNumeroOF = new JTextField(valorTabela(linhaModelo, 4));
+        JTextField txtNumeroPager = new JTextField(valorTabela(linhaModelo, 5));
+        JTextField txtOfTroca = new JTextField(valorTabela(linhaModelo, 6));
 
         JComboBox<String> cbStatus = new JComboBox<>(new String[] {
                 "OK",
@@ -182,11 +166,19 @@ public class ConsultaView extends JFrame {
                 "Aguardando",
                 "Finalizado"
         });
-        cbStatus.setSelectedItem(status);
+        cbStatus.setSelectedItem(valorTabela(linhaModelo, 7));
 
-        JTextField txtAutorizacao = new JTextField(autorizacao);
-        JTextField txtHoraAutorizacao = new JTextField(horaAutorizacao);
-        JTextArea txtObservacao = new JTextArea(observacao);
+        JTextField txtAutorizacao = new JTextField(valorTabela(linhaModelo, 8));
+        JTextField txtHoraAutorizacao = new JTextField(valorTabela(linhaModelo, 9));
+
+        JTextArea txtObservacao = new JTextArea(valorTabela(linhaModelo, 10), 4, 20);
+        txtObservacao.setLineWrap(true);
+        txtObservacao.setWrapStyleWord(true);
+
+        txtData.setEditable(false);
+        txtHoraCadastro.setEditable(false);
+
+        JPanel painel = new JPanel(new GridLayout(0, 2, 8, 8));
 
         painel.add(new JLabel("Data:"));
         painel.add(txtData);
@@ -203,7 +195,7 @@ public class ConsultaView extends JFrame {
         painel.add(new JLabel("Número Pager:"));
         painel.add(txtNumeroPager);
 
-        painel.add(new JLabel("OF de Troca:"));
+        painel.add(new JLabel("OF Troca:"));
         painel.add(txtOfTroca);
 
         painel.add(new JLabel("Status:"));
@@ -218,46 +210,59 @@ public class ConsultaView extends JFrame {
         painel.add(new JLabel("Observação:"));
         painel.add(new JScrollPane(txtObservacao));
 
-        dialog.add(painel, BorderLayout.CENTER);
+        int opcao = JOptionPane.showConfirmDialog(
+                this,
+                painel,
+                "Alterar Cadastro ID " + id,
+                JOptionPane.OK_CANCEL_OPTION,
+                JOptionPane.PLAIN_MESSAGE
+        );
 
-        JPanel painelBotoes = new JPanel();
+        if (opcao != JOptionPane.OK_OPTION) {
+            return;
+        }
 
-        JButton btnSalvar = new JButton("Salvar Alteração");
-        JButton btnCancelar = new JButton("Cancelar");
+        if (txtPlaca.getText().trim().isEmpty()) {
+            JOptionPane.showMessageDialog(this, "A placa não pode ficar vazia.");
+            return;
+        }
 
-        painelBotoes.add(btnSalvar);
-        painelBotoes.add(btnCancelar);
+        String horaAlteracao = LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss"));
 
-        dialog.add(painelBotoes, BorderLayout.SOUTH);
+        Cadastro c = new Cadastro();
 
-        btnSalvar.addActionListener(e -> {
+        c.setId(id);
+        c.setData(txtData.getText());
+        c.setHoraCadastro(txtHoraCadastro.getText());
+        c.setPlaca(txtPlaca.getText().trim());
+        c.setNumeroOF(txtNumeroOF.getText().trim());
+        c.setNumeroPager(txtNumeroPager.getText().trim());
+        c.setOfTroca(txtOfTroca.getText().trim());
+        c.setStatus(cbStatus.getSelectedItem().toString());
+        c.setAutorizacao(txtAutorizacao.getText().trim());
+        c.setHoraAutorizacao(txtHoraAutorizacao.getText().trim());
+        c.setObservacao(txtObservacao.getText().trim());
 
-            Cadastro c = new Cadastro();
+        c.setUsuarioAlteracao(usuarioLogado);
+        c.setHoraAlteracao(horaAlteracao);
 
-            c.setHoraCadastro(id);
-            c.setData(txtData.getText());
-            c.setHoraCadastro(txtHoraCadastro.getText());
-            c.setPlaca(txtPlaca.getText());
-            c.setNumeroOF(txtNumeroOF.getText());
-            c.setNumeroPager(txtNumeroPager.getText());
-            c.setOfTroca(txtOfTroca.getText());
-            c.setStatus(cbStatus.getSelectedItem().toString());
-            c.setAutorizacao(txtAutorizacao.getText());
-            c.setHoraAutorizacao(txtHoraAutorizacao.getText());
-            c.setObservacao(txtObservacao.getText());
-            c.setUsuario(usuarioCadastro);
+        CadastroDAO dao = new CadastroDAO();
+        boolean alterou = dao.atualizar(c);
 
-            CadastroDAO dao = new CadastroDAO();
-            dao.atualizar(c);
+        if (alterou) {
+            JOptionPane.showMessageDialog(this, "Cadastro alterado com sucesso.");
+            carregarDados();
+        } else {
+            JOptionPane.showMessageDialog(this, "Erro ao alterar cadastro.");
+        }
+    }
 
-            JOptionPane.showMessageDialog(dialog, "Cadastro alterado com sucesso!");
+    private String valorTabela(int linha, int coluna) {
+        Object valor = modelo.getValueAt(linha, coluna);
+        return valor == null ? "" : valor.toString();
+    }
 
-            dialog.dispose();
-            atualizarTabela();
-        });
-
-        btnCancelar.addActionListener(e -> dialog.dispose());
-
-        dialog.setVisible(true);
+    private String valorSeguro(String valor) {
+        return valor == null ? "" : valor;
     }
 }

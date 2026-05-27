@@ -1,181 +1,260 @@
 package sistema.view;
 
-import javax.swing.*;
+import java.awt.Font;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
+
+import javax.swing.JButton;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPasswordField;
+import javax.swing.JTextField;
 
 import sistema.dao.UsuarioDAO;
+import sistema.model.Usuario;
 
 public class LoginView extends JFrame {
 
-    private JTextField txtLogin;
+    private JTextField txtUsuario;
     private JPasswordField txtSenha;
     private JButton btnEntrar;
+    private JButton btnSair;
     private JButton btnEsqueceuSenha;
+    private JButton btnNovoCadastro;
 
     public LoginView() {
+
         setTitle("Login");
-        setSize(320, 230);
+        setSize(480, 380);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
-        setLayout(null);
+        setLayout(new GridBagLayout());
 
-        JLabel lblLogin = new JLabel("Login:");
-        lblLogin.setBounds(30, 30, 80, 25);
-        add(lblLogin);
-
-        txtLogin = new JTextField();
-        txtLogin.setBounds(100, 30, 170, 25);
-        add(txtLogin);
-
-        JLabel lblSenha = new JLabel("Senha:");
-        lblSenha.setBounds(30, 70, 80, 25);
-        add(lblSenha);
-
-        txtSenha = new JPasswordField();
-        txtSenha.setBounds(100, 70, 170, 25);
-        add(txtSenha);
-
-        btnEntrar = new JButton("Entrar");
-        btnEntrar.setBounds(110, 110, 100, 25);
-        add(btnEntrar);
-
-        btnEsqueceuSenha = new JButton("Esqueceu sua senha?");
-        btnEsqueceuSenha.setBounds(70, 145, 180, 25);
-        add(btnEsqueceuSenha);
-        
-        JButton btnCadastrar = new JButton("Cadastrar Usuário");
-        btnCadastrar.setBounds(70, 175, 180, 25);
-        add(btnCadastrar);
-
-        btnCadastrar.addActionListener(e -> abrirCadastroUsuario());
-
-        btnEntrar.addActionListener(e -> logar());
-        btnEsqueceuSenha.addActionListener(e -> abrirRecuperarSenha());
+        criarTela();
     }
 
-    private void abrirCadastroUsuario() {
+    private void criarTela() {
 
-        JTextField txtNovoLogin = new JTextField();
-        JTextField txtNovoEmail = new JTextField();
-        JPasswordField txtNovaSenha = new JPasswordField();
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(10, 10, 10, 10);
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+
+        Font fonteLabel = new Font("Arial", Font.BOLD, 16);
+        Font fonteCampo = new Font("Arial", Font.PLAIN, 16);
+
+        JLabel lblUsuario = new JLabel("Usuário:");
+        lblUsuario.setFont(fonteLabel);
+
+        txtUsuario = new JTextField(18);
+        txtUsuario.setFont(fonteCampo);
+
+        JLabel lblSenha = new JLabel("Senha:");
+        lblSenha.setFont(fonteLabel);
+
+        txtSenha = new JPasswordField(18);
+        txtSenha.setFont(fonteCampo);
+
+        btnEntrar = new JButton("Entrar");
+        btnEntrar.setFont(fonteCampo);
+
+        btnSair = new JButton("Sair");
+        btnSair.setFont(fonteCampo);
+
+        btnEsqueceuSenha = new JButton("Esqueceu a senha?");
+        btnEsqueceuSenha.setFont(fonteCampo);
+
+        btnNovoCadastro = new JButton("Novo cadastro");
+        btnNovoCadastro.setFont(fonteCampo);
+
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.gridwidth = 1;
+        add(lblUsuario, gbc);
+
+        gbc.gridx = 1;
+        gbc.gridy = 0;
+        add(txtUsuario, gbc);
+
+        gbc.gridx = 0;
+        gbc.gridy = 1;
+        add(lblSenha, gbc);
+
+        gbc.gridx = 1;
+        gbc.gridy = 1;
+        add(txtSenha, gbc);
+
+        gbc.gridx = 0;
+        gbc.gridy = 2;
+        add(btnEntrar, gbc);
+
+        gbc.gridx = 1;
+        gbc.gridy = 2;
+        add(btnSair, gbc);
+
+        gbc.gridx = 0;
+        gbc.gridy = 3;
+        gbc.gridwidth = 2;
+        add(btnNovoCadastro, gbc);
+
+        gbc.gridx = 0;
+        gbc.gridy = 4;
+        gbc.gridwidth = 2;
+        add(btnEsqueceuSenha, gbc);
+
+        btnEntrar.addActionListener(e -> logar());
+
+        btnSair.addActionListener(e -> System.exit(0));
+
+        btnEsqueceuSenha.addActionListener(e -> alterarSenhaEsquecida());
+
+        btnNovoCadastro.addActionListener(e -> fazerNovoCadastro());
+    }
+
+    private void logar() {
+
+        String usuarioDigitado = txtUsuario.getText().trim();
+        String senhaDigitada = new String(txtSenha.getPassword()).trim();
+
+        if (usuarioDigitado.isEmpty() || senhaDigitada.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Informe usuário e senha.");
+            return;
+        }
+
+        UsuarioDAO dao = new UsuarioDAO();
+        Usuario usuario = dao.logar(usuarioDigitado, senhaDigitada);
+
+        if (usuario == null) {
+            JOptionPane.showMessageDialog(this, "Usuário ou senha inválidos.");
+            return;
+        }
+
+        dispose();
+
+        if ("admin".equalsIgnoreCase(usuario.getTipo())) {
+            new AdminView(usuario.getUsuario()).setVisible(true);
+        } else {
+            new CadastroView(usuario.getUsuario()).setVisible(true);
+        }
+    }
+
+    private void fazerNovoCadastro() {
+
+        JTextField campoUsuario = new JTextField();
+        JPasswordField campoSenha = new JPasswordField();
+        JPasswordField campoConfirmarSenha = new JPasswordField();
 
         Object[] campos = {
-
-                "Login:", txtNovoLogin,
-                "E-mail:", txtNovoEmail,
-                "Senha:", txtNovaSenha
-
+                "Novo usuário:", campoUsuario,
+                "Senha:", campoSenha,
+                "Confirmar senha:", campoConfirmarSenha
         };
 
         int opcao = JOptionPane.showConfirmDialog(
                 this,
                 campos,
-                "Cadastrar Usuário",
+                "Novo cadastro de usuário",
                 JOptionPane.OK_CANCEL_OPTION
         );
 
-        if (opcao == JOptionPane.OK_OPTION) {
-
-            String login = txtNovoLogin.getText();
-            String email = txtNovoEmail.getText();
-            String senha = new String(txtNovaSenha.getPassword());
-
-            if (login.isEmpty() || email.isEmpty() || senha.isEmpty()) {
-
-                JOptionPane.showMessageDialog(this,
-                        "Preencha todos os campos.");
-
-                return;
-            }
-
-            UsuarioDAO dao = new UsuarioDAO();
-
-            boolean sucesso = dao.cadastrarUsuario(login, senha, email);
-
-            if (sucesso) {
-
-                JOptionPane.showMessageDialog(this,
-                        "Usuário cadastrado com sucesso!");
-
-            } else {
-
-                JOptionPane.showMessageDialog(this,
-                        "Erro ao cadastrar usuário.");
-
-            }
+        if (opcao != JOptionPane.OK_OPTION) {
+            return;
         }
-    }
 
-	private void logar() {
-        String login = txtLogin.getText();
-        String senha = new String(txtSenha.getPassword());
+        String novoUsuario = campoUsuario.getText().trim();
+        String senha = new String(campoSenha.getPassword()).trim();
+        String confirmarSenha = new String(campoConfirmarSenha.getPassword()).trim();
+
+        if (novoUsuario.isEmpty() || senha.isEmpty() || confirmarSenha.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Preencha todos os campos.");
+            return;
+        }
+
+        if (!senha.equals(confirmarSenha)) {
+            JOptionPane.showMessageDialog(this, "As senhas não conferem.");
+            return;
+        }
 
         UsuarioDAO dao = new UsuarioDAO();
-        boolean valido = dao.loginValido(login, senha);
 
-        if (valido) {
-            boolean admin = dao.isAdministrador(login);
-
-            JOptionPane.showMessageDialog(this, "Login OK!");
-
-            dispose();
-
-            if (admin) {
-                new AdminView(login).setVisible(true);
-            } else {
-                new CadastroView(login).setVisible(true);
-            }
-
-        } else {
-            JOptionPane.showMessageDialog(this, "Login ou senha inválidos");
+        if (dao.existeUsuario(novoUsuario)) {
+            JOptionPane.showMessageDialog(this, "Este usuário já existe.");
+            return;
         }
+
+        Usuario usuario = new Usuario();
+        usuario.setUsuario(novoUsuario);
+        usuario.setSenha(senha);
+        usuario.setTipo("usuario");
+
+        dao.inserir(usuario);
+
+        JOptionPane.showMessageDialog(this, "Usuário cadastrado com sucesso.");
+
+        txtUsuario.setText(novoUsuario);
+        txtSenha.setText("");
+        txtSenha.requestFocus();
     }
 
-    private void abrirRecuperarSenha() {
-        String email = JOptionPane.showInputDialog(
+    private void alterarSenhaEsquecida() {
+
+        String usuarioDigitado = JOptionPane.showInputDialog(
                 this,
-                "Informe seu e-mail cadastrado:",
-                "Recuperar senha",
-                JOptionPane.PLAIN_MESSAGE
+                "Informe o usuário para alterar a senha:"
         );
 
-        if (email == null || email.trim().isEmpty()) {
+        if (usuarioDigitado == null || usuarioDigitado.trim().isEmpty()) {
             return;
         }
+
+        usuarioDigitado = usuarioDigitado.trim();
 
         UsuarioDAO dao = new UsuarioDAO();
 
-        boolean existe = dao.emailExiste(email);
-
-        if (!existe) {
-            JOptionPane.showMessageDialog(this, "E-mail não encontrado no sistema.");
+        if (!dao.existeUsuario(usuarioDigitado)) {
+            JOptionPane.showMessageDialog(this, "Usuário não encontrado.");
             return;
         }
 
-        String senhaProvisoria = gerarSenhaProvisoria();
+        JPasswordField campoNovaSenha = new JPasswordField();
+        JPasswordField campoConfirmarSenha = new JPasswordField();
 
-        boolean atualizado = dao.atualizarSenhaPorEmail(email, senhaProvisoria);
+        Object[] campos = {
+                "Nova senha:", campoNovaSenha,
+                "Confirmar nova senha:", campoConfirmarSenha
+        };
 
-        if (atualizado) {
-            JOptionPane.showMessageDialog(
-                    this,
-                    "Senha provisória gerada com sucesso.\n\n" +
-                    "Senha: " + senhaProvisoria + "\n\n" +
-                    "Informe esta senha ao usuário."
-            );
+        int opcao = JOptionPane.showConfirmDialog(
+                this,
+                campos,
+                "Refazer senha",
+                JOptionPane.OK_CANCEL_OPTION
+        );
+
+        if (opcao != JOptionPane.OK_OPTION) {
+            return;
+        }
+
+        String novaSenha = new String(campoNovaSenha.getPassword()).trim();
+        String confirmarSenha = new String(campoConfirmarSenha.getPassword()).trim();
+
+        if (novaSenha.isEmpty() || confirmarSenha.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Informe e confirme a nova senha.");
+            return;
+        }
+
+        if (!novaSenha.equals(confirmarSenha)) {
+            JOptionPane.showMessageDialog(this, "As senhas não conferem.");
+            return;
+        }
+
+        boolean alterou = dao.alterarSenhaPorUsuario(usuarioDigitado, novaSenha);
+
+        if (alterou) {
+            JOptionPane.showMessageDialog(this, "Senha alterada com sucesso.");
         } else {
-            JOptionPane.showMessageDialog(this, "Erro ao gerar senha provisória.");
+            JOptionPane.showMessageDialog(this, "Erro ao alterar senha.");
         }
-    }
-
-    private String gerarSenhaProvisoria() {
-        String caracteres = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-        StringBuilder senha = new StringBuilder();
-
-        for (int i = 0; i < 8; i++) {
-            int posicao = (int) (Math.random() * caracteres.length());
-            senha.append(caracteres.charAt(posicao));
-        }
-
-        return senha.toString();
     }
 }
