@@ -1,5 +1,6 @@
 package sistema.view;
 
+import java.awt.EventQueue;
 import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -23,6 +24,18 @@ public class LoginView extends JFrame {
     private JButton btnSair;
     private JButton btnEsqueceuSenha;
     private JButton btnNovoCadastro;
+    
+    
+	public static void main(String[] args) {
+		EventQueue.invokeLater(() -> {
+			try {
+				LoginView frame = new LoginView();
+				frame.setVisible(true);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		});
+	}
 
     public LoginView() {
 
