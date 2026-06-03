@@ -3,38 +3,57 @@ package sistema.view;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.Font;
+import java.awt.GridLayout;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 import javax.swing.JButton;
+import javax.swing.JComboBox;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
 import javax.swing.JTable;
 import javax.swing.JPasswordField;
+import javax.swing.JTextArea;
+import javax.swing.JTextField;
 import javax.swing.ListSelectionModel;
 import javax.swing.table.DefaultTableModel;
 
 import sistema.dao.CadastroDAO;
+import sistema.dao.MateriaPrimaDAO;
 import sistema.dao.UsuarioDAO;
 import sistema.model.Cadastro;
+import sistema.model.MateriaPrima;
 import sistema.model.Usuario;
 
 public class AdminView extends JFrame {
 
-    private JTable tabelaCadastros;
-    private DefaultTableModel modeloCadastros;
+    private static final long serialVersionUID = 1L;
+
+    private JTable tabelaOF;
+    private DefaultTableModel modeloOF;
+
+    private JTable tabelaMateriaPrima;
+    private DefaultTableModel modeloMateriaPrima;
 
     private JTable tabelaUsuarios;
     private DefaultTableModel modeloUsuarios;
 
-    private JButton btnAtualizarCadastros;
-    private JButton btnExcluirCadastro;
+    private JButton btnAtualizarOF;
+    private JButton btnAlterarOF;
+    private JButton btnExcluirOF;
+
+    private JButton btnAtualizarMateriaPrima;
+    private JButton btnAlterarMateriaPrima;
+    private JButton btnExcluirMateriaPrima;
 
     private JButton btnAtualizarUsuarios;
-    private JButton btnExcluirUsuario;
     private JButton btnAlterarSenhaUsuario;
+    private JButton btnExcluirUsuario;
 
     private JButton btnVoltar;
 
@@ -56,15 +75,17 @@ public class AdminView extends JFrame {
     private void criarTela() {
 
         JTabbedPane abas = new JTabbedPane();
+        abas.setFont(new Font("Arial", Font.BOLD, 15));
 
-        abas.addTab("Cadastros de Caminhões", criarPainelCadastros());
-        abas.addTab("Usuários Cadastrados", criarPainelUsuarios());
+        abas.addTab("Consulta OF", criarAbaOF());
+        abas.addTab("Consulta Matéria-Prima", criarAbaMateriaPrima());
+        abas.addTab("Usuários Cadastrados", criarAbaUsuarios());
 
         add(abas, BorderLayout.CENTER);
 
         JPanel painelInferior = new JPanel();
 
-        btnVoltar = new JButton("Voltar");
+        btnVoltar = new JButton("Voltar para Login");
         btnVoltar.setFont(new Font("Arial", Font.BOLD, 15));
 
         painelInferior.add(btnVoltar);
@@ -76,15 +97,18 @@ public class AdminView extends JFrame {
             new LoginView().setVisible(true);
         });
 
-        carregarCadastros();
+        carregarOF();
+        carregarMateriaPrima();
         carregarUsuarios();
     }
 
-    private JPanel criarPainelCadastros() {
+    private JPanel criarAbaOF() {
 
         JPanel painel = new JPanel(new BorderLayout());
 
-        modeloCadastros = new DefaultTableModel() {
+        modeloOF = new DefaultTableModel() {
+
+            private static final long serialVersionUID = 1L;
 
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -92,55 +116,136 @@ public class AdminView extends JFrame {
             }
         };
 
-        modeloCadastros.addColumn("ID");
-        modeloCadastros.addColumn("Data");
-        modeloCadastros.addColumn("Hora Cadastro");
-        modeloCadastros.addColumn("Placa");
-        modeloCadastros.addColumn("Número OF");
-        modeloCadastros.addColumn("Número Pager");
-        modeloCadastros.addColumn("OF Troca");
-        modeloCadastros.addColumn("Status");
-        modeloCadastros.addColumn("Autorização");
-        modeloCadastros.addColumn("Hora Autorização");
-        modeloCadastros.addColumn("Observação");
-        modeloCadastros.addColumn("Usuário");
+        modeloOF.addColumn("ID");
+        modeloOF.addColumn("Data");
+        modeloOF.addColumn("Hora Cadastro");
+        modeloOF.addColumn("Placa");
+        modeloOF.addColumn("Número OF");
+        modeloOF.addColumn("Número Pager");
+        modeloOF.addColumn("OF Troca");
+        modeloOF.addColumn("Status");
+        modeloOF.addColumn("Autorização");
+        modeloOF.addColumn("Hora Autorização");
+        modeloOF.addColumn("Observação");
+        modeloOF.addColumn("Usuário Cadastro");
+        modeloOF.addColumn("Usuário Alteração");
+        modeloOF.addColumn("Hora Alteração");
 
-        tabelaCadastros = new JTable(modeloCadastros);
-        tabelaCadastros.setFont(new Font("Arial", Font.PLAIN, 14));
-        tabelaCadastros.setRowHeight(28);
-        tabelaCadastros.getTableHeader().setFont(new Font("Arial", Font.BOLD, 14));
-        tabelaCadastros.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        tabelaCadastros.setAutoCreateRowSorter(true);
+        tabelaOF = new JTable(modeloOF);
+        tabelaOF.setFont(new Font("Arial", Font.PLAIN, 14));
+        tabelaOF.setRowHeight(28);
+        tabelaOF.getTableHeader().setFont(new Font("Arial", Font.BOLD, 14));
+        tabelaOF.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        tabelaOF.setAutoCreateRowSorter(true);
+        tabelaOF.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
 
-        JScrollPane scroll = new JScrollPane(tabelaCadastros);
-        scroll.setPreferredSize(new Dimension(1000, 600));
+        configurarLarguraColunasOF();
+
+        JScrollPane scroll = new JScrollPane(tabelaOF);
+        scroll.setPreferredSize(new Dimension(1300, 600));
 
         painel.add(scroll, BorderLayout.CENTER);
 
         JPanel painelBotoes = new JPanel();
 
-        btnAtualizarCadastros = new JButton("Atualizar Cadastros");
-        btnAtualizarCadastros.setFont(new Font("Arial", Font.BOLD, 15));
+        btnAtualizarOF = new JButton("Atualizar OF");
+        btnAtualizarOF.setFont(new Font("Arial", Font.BOLD, 15));
 
-        btnExcluirCadastro = new JButton("Excluir Cadastro");
-        btnExcluirCadastro.setFont(new Font("Arial", Font.BOLD, 15));
+        btnAlterarOF = new JButton("Alterar OF Selecionada");
+        btnAlterarOF.setFont(new Font("Arial", Font.BOLD, 15));
 
-        painelBotoes.add(btnAtualizarCadastros);
-        painelBotoes.add(btnExcluirCadastro);
+        btnExcluirOF = new JButton("Excluir OF");
+        btnExcluirOF.setFont(new Font("Arial", Font.BOLD, 15));
+
+        painelBotoes.add(btnAtualizarOF);
+        painelBotoes.add(btnAlterarOF);
+        painelBotoes.add(btnExcluirOF);
 
         painel.add(painelBotoes, BorderLayout.SOUTH);
 
-        btnAtualizarCadastros.addActionListener(e -> carregarCadastros());
-        btnExcluirCadastro.addActionListener(e -> excluirCadastro());
+        btnAtualizarOF.addActionListener(e -> carregarOF());
+        btnAlterarOF.addActionListener(e -> alterarOF());
+        btnExcluirOF.addActionListener(e -> excluirOF());
 
         return painel;
     }
 
-    private JPanel criarPainelUsuarios() {
+    private JPanel criarAbaMateriaPrima() {
+
+        JPanel painel = new JPanel(new BorderLayout());
+
+        modeloMateriaPrima = new DefaultTableModel() {
+
+            private static final long serialVersionUID = 1L;
+
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
+        };
+
+        modeloMateriaPrima.addColumn("ID");
+        modeloMateriaPrima.addColumn("Data");
+        modeloMateriaPrima.addColumn("Hora Chegada");
+        modeloMateriaPrima.addColumn("Placa");
+        modeloMateriaPrima.addColumn("Material");
+        modeloMateriaPrima.addColumn("Fornecedor");
+        modeloMateriaPrima.addColumn("Hora Finalizou Pendência");
+        modeloMateriaPrima.addColumn("Número Nota");
+        modeloMateriaPrima.addColumn("Autorização");
+        modeloMateriaPrima.addColumn("Status");
+        modeloMateriaPrima.addColumn("Observação");
+        modeloMateriaPrima.addColumn("Nota Substituta");
+        modeloMateriaPrima.addColumn("Usuário Cadastro");
+        modeloMateriaPrima.addColumn("Usuário Alteração");
+        modeloMateriaPrima.addColumn("Hora Alteração");
+
+        tabelaMateriaPrima = new JTable(modeloMateriaPrima);
+        tabelaMateriaPrima.setFont(new Font("Arial", Font.PLAIN, 14));
+        tabelaMateriaPrima.setRowHeight(28);
+        tabelaMateriaPrima.getTableHeader().setFont(new Font("Arial", Font.BOLD, 14));
+        tabelaMateriaPrima.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        tabelaMateriaPrima.setAutoCreateRowSorter(true);
+        tabelaMateriaPrima.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+
+        configurarLarguraColunasMateriaPrima();
+
+        JScrollPane scroll = new JScrollPane(tabelaMateriaPrima);
+        scroll.setPreferredSize(new Dimension(1300, 600));
+
+        painel.add(scroll, BorderLayout.CENTER);
+
+        JPanel painelBotoes = new JPanel();
+
+        btnAtualizarMateriaPrima = new JButton("Atualizar Matéria-Prima");
+        btnAtualizarMateriaPrima.setFont(new Font("Arial", Font.BOLD, 15));
+
+        btnAlterarMateriaPrima = new JButton("Alterar Matéria-Prima Selecionada");
+        btnAlterarMateriaPrima.setFont(new Font("Arial", Font.BOLD, 15));
+
+        btnExcluirMateriaPrima = new JButton("Excluir Matéria-Prima");
+        btnExcluirMateriaPrima.setFont(new Font("Arial", Font.BOLD, 15));
+
+        painelBotoes.add(btnAtualizarMateriaPrima);
+        painelBotoes.add(btnAlterarMateriaPrima);
+        painelBotoes.add(btnExcluirMateriaPrima);
+
+        painel.add(painelBotoes, BorderLayout.SOUTH);
+
+        btnAtualizarMateriaPrima.addActionListener(e -> carregarMateriaPrima());
+        btnAlterarMateriaPrima.addActionListener(e -> alterarMateriaPrima());
+        btnExcluirMateriaPrima.addActionListener(e -> excluirMateriaPrima());
+
+        return painel;
+    }
+
+    private JPanel criarAbaUsuarios() {
 
         JPanel painel = new JPanel(new BorderLayout());
 
         modeloUsuarios = new DefaultTableModel() {
+
+            private static final long serialVersionUID = 1L;
 
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -188,16 +293,15 @@ public class AdminView extends JFrame {
         return painel;
     }
 
-    private void carregarCadastros() {
+    private void carregarOF() {
 
-        modeloCadastros.setRowCount(0);
+        modeloOF.setRowCount(0);
 
         CadastroDAO dao = new CadastroDAO();
         List<Cadastro> lista = dao.listarTodos();
 
         for (Cadastro c : lista) {
-
-            modeloCadastros.addRow(new Object[] {
+            modeloOF.addRow(new Object[] {
                     c.getId(),
                     valorSeguro(c.getData()),
                     valorSeguro(c.getHoraCadastro()),
@@ -209,7 +313,37 @@ public class AdminView extends JFrame {
                     valorSeguro(c.getAutorizacao()),
                     valorSeguro(c.getHoraAutorizacao()),
                     valorSeguro(c.getObservacao()),
-                    valorSeguro(c.getUsuario())
+                    valorSeguro(c.getUsuario()),
+                    valorSeguro(c.getUsuarioAlteracao()),
+                    valorSeguro(c.getHoraAlteracao())
+            });
+        }
+    }
+
+    private void carregarMateriaPrima() {
+
+        modeloMateriaPrima.setRowCount(0);
+
+        MateriaPrimaDAO dao = new MateriaPrimaDAO();
+        List<MateriaPrima> lista = dao.listarTodos();
+
+        for (MateriaPrima mp : lista) {
+            modeloMateriaPrima.addRow(new Object[] {
+                    mp.getId(),
+                    valorSeguro(mp.getData()),
+                    valorSeguro(mp.getHoraChegada()),
+                    valorSeguro(mp.getPlaca()),
+                    valorSeguro(mp.getMaterial()),
+                    valorSeguro(mp.getFornecedor()),
+                    valorSeguro(mp.getHoraFinalizouPendencia()),
+                    valorSeguro(mp.getNumeroNota()),
+                    valorSeguro(mp.getAutorizacao()),
+                    valorSeguro(mp.getStatus()),
+                    valorSeguro(mp.getObservacao()),
+                    valorSeguro(mp.getNotaSubstituta()),
+                    valorSeguro(mp.getUsuario()),
+                    valorSeguro(mp.getUsuarioAlteracao()),
+                    valorSeguro(mp.getHoraAlteracao())
             });
         }
     }
@@ -222,7 +356,6 @@ public class AdminView extends JFrame {
         List<Usuario> lista = dao.listarTodos();
 
         for (Usuario u : lista) {
-
             modeloUsuarios.addRow(new Object[] {
                     u.getId(),
                     valorSeguro(u.getUsuario()),
@@ -231,36 +364,270 @@ public class AdminView extends JFrame {
         }
     }
 
-    private void excluirCadastro() {
+    private void alterarOF() {
 
-        int linhaSelecionada = tabelaCadastros.getSelectedRow();
+        int linhaSelecionada = tabelaOF.getSelectedRow();
 
         if (linhaSelecionada == -1) {
-            JOptionPane.showMessageDialog(this, "Selecione um cadastro para excluir.");
+            JOptionPane.showMessageDialog(this, "Selecione uma OF para alterar.");
             return;
         }
 
-        int linhaModelo = tabelaCadastros.convertRowIndexToModel(linhaSelecionada);
+        int linhaModelo = tabelaOF.convertRowIndexToModel(linhaSelecionada);
 
-        Object valorId = modeloCadastros.getValueAt(linhaModelo, 0);
+        int id = Integer.parseInt(modeloOF.getValueAt(linhaModelo, 0).toString());
 
-        if (valorId == null || valorId.toString().trim().isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Erro: ID do cadastro não encontrado.");
+        JTextField txtData = new JTextField(valorTabela(modeloOF, linhaModelo, 1));
+        JTextField txtHoraCadastro = new JTextField(valorTabela(modeloOF, linhaModelo, 2));
+        JTextField txtPlaca = new JTextField(valorTabela(modeloOF, linhaModelo, 3));
+        JTextField txtNumeroOF = new JTextField(valorTabela(modeloOF, linhaModelo, 4));
+        JTextField txtNumeroPager = new JTextField(valorTabela(modeloOF, linhaModelo, 5));
+        JTextField txtOfTroca = new JTextField(valorTabela(modeloOF, linhaModelo, 6));
+
+        JComboBox<String> cbStatus = new JComboBox<>(new String[] {
+                "OK",
+                "Pendente",
+                "Aguardando",
+                "Finalizado"
+        });
+        cbStatus.setSelectedItem(valorTabela(modeloOF, linhaModelo, 7));
+
+        JTextField txtAutorizacao = new JTextField(valorTabela(modeloOF, linhaModelo, 8));
+        JTextField txtHoraAutorizacao = new JTextField(valorTabela(modeloOF, linhaModelo, 9));
+
+        JTextArea txtObservacao = new JTextArea(valorTabela(modeloOF, linhaModelo, 10), 4, 20);
+        txtObservacao.setLineWrap(true);
+        txtObservacao.setWrapStyleWord(true);
+
+        txtData.setEditable(false);
+        txtHoraCadastro.setEditable(false);
+
+        JPanel painel = new JPanel(new GridLayout(0, 2, 8, 8));
+
+        painel.add(new JLabel("Data:"));
+        painel.add(txtData);
+
+        painel.add(new JLabel("Hora Cadastro:"));
+        painel.add(txtHoraCadastro);
+
+        painel.add(new JLabel("Placa:"));
+        painel.add(txtPlaca);
+
+        painel.add(new JLabel("Número OF:"));
+        painel.add(txtNumeroOF);
+
+        painel.add(new JLabel("Número Pager:"));
+        painel.add(txtNumeroPager);
+
+        painel.add(new JLabel("OF Troca:"));
+        painel.add(txtOfTroca);
+
+        painel.add(new JLabel("Status:"));
+        painel.add(cbStatus);
+
+        painel.add(new JLabel("Autorização:"));
+        painel.add(txtAutorizacao);
+
+        painel.add(new JLabel("Hora Autorização:"));
+        painel.add(txtHoraAutorizacao);
+
+        painel.add(new JLabel("Observação:"));
+        painel.add(new JScrollPane(txtObservacao));
+
+        int opcao = JOptionPane.showConfirmDialog(
+                this,
+                painel,
+                "Alterar OF ID " + id,
+                JOptionPane.OK_CANCEL_OPTION,
+                JOptionPane.PLAIN_MESSAGE
+        );
+
+        if (opcao != JOptionPane.OK_OPTION) {
             return;
         }
 
-        int id;
-
-        try {
-            id = Integer.parseInt(valorId.toString());
-        } catch (NumberFormatException e) {
-            JOptionPane.showMessageDialog(this, "Erro: ID inválido para exclusão.");
+        if (txtPlaca.getText().trim().isEmpty()) {
+            JOptionPane.showMessageDialog(this, "A placa não pode ficar vazia.");
             return;
         }
+
+        String horaAlteracao = LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss"));
+
+        Cadastro c = new Cadastro();
+
+        c.setId(id);
+        c.setData(txtData.getText());
+        c.setHoraCadastro(txtHoraCadastro.getText());
+        c.setPlaca(txtPlaca.getText().trim().toUpperCase());
+        c.setNumeroOF(txtNumeroOF.getText().trim());
+        c.setNumeroPager(txtNumeroPager.getText().trim());
+        c.setOfTroca(txtOfTroca.getText().trim());
+        c.setStatus(cbStatus.getSelectedItem().toString());
+        c.setAutorizacao(txtAutorizacao.getText().trim());
+        c.setHoraAutorizacao(txtHoraAutorizacao.getText().trim());
+        c.setObservacao(txtObservacao.getText().trim());
+        c.setUsuarioAlteracao(usuarioLogado);
+        c.setHoraAlteracao(horaAlteracao);
+
+        CadastroDAO dao = new CadastroDAO();
+        boolean alterou = dao.atualizar(c);
+
+        if (alterou) {
+            JOptionPane.showMessageDialog(this, "OF alterada com sucesso.");
+            carregarOF();
+        } else {
+            JOptionPane.showMessageDialog(this, "Erro ao alterar OF.");
+        }
+    }
+
+    private void alterarMateriaPrima() {
+
+        int linhaSelecionada = tabelaMateriaPrima.getSelectedRow();
+
+        if (linhaSelecionada == -1) {
+            JOptionPane.showMessageDialog(this, "Selecione um cadastro de matéria-prima para alterar.");
+            return;
+        }
+
+        int linhaModelo = tabelaMateriaPrima.convertRowIndexToModel(linhaSelecionada);
+
+        int id = Integer.parseInt(modeloMateriaPrima.getValueAt(linhaModelo, 0).toString());
+
+        JTextField txtData = new JTextField(valorTabela(modeloMateriaPrima, linhaModelo, 1));
+        JTextField txtHoraChegada = new JTextField(valorTabela(modeloMateriaPrima, linhaModelo, 2));
+        JTextField txtPlaca = new JTextField(valorTabela(modeloMateriaPrima, linhaModelo, 3));
+        JTextField txtMaterial = new JTextField(valorTabela(modeloMateriaPrima, linhaModelo, 4));
+        JTextField txtFornecedor = new JTextField(valorTabela(modeloMateriaPrima, linhaModelo, 5));
+        JTextField txtHoraFinalizou = new JTextField(valorTabela(modeloMateriaPrima, linhaModelo, 6));
+        JTextField txtNumeroNota = new JTextField(valorTabela(modeloMateriaPrima, linhaModelo, 7));
+        JTextField txtAutorizacao = new JTextField(valorTabela(modeloMateriaPrima, linhaModelo, 8));
+
+        JComboBox<String> cbStatus = new JComboBox<>(new String[] {
+                "LIBERADO",
+                "AGUARDANDO",
+                "RECUSADO"
+        });
+        cbStatus.setSelectedItem(valorTabela(modeloMateriaPrima, linhaModelo, 9));
+
+        JTextArea txtObservacao = new JTextArea(valorTabela(modeloMateriaPrima, linhaModelo, 10), 4, 20);
+        txtObservacao.setLineWrap(true);
+        txtObservacao.setWrapStyleWord(true);
+
+        JTextField txtNotaSubstituta = new JTextField(valorTabela(modeloMateriaPrima, linhaModelo, 11));
+
+        txtData.setEditable(false);
+        txtHoraChegada.setEditable(false);
+
+        JPanel painel = new JPanel(new GridLayout(0, 2, 8, 8));
+
+        painel.add(new JLabel("Data:"));
+        painel.add(txtData);
+
+        painel.add(new JLabel("Hora Chegada:"));
+        painel.add(txtHoraChegada);
+
+        painel.add(new JLabel("Placa:"));
+        painel.add(txtPlaca);
+
+        painel.add(new JLabel("Material:"));
+        painel.add(txtMaterial);
+
+        painel.add(new JLabel("Fornecedor:"));
+        painel.add(txtFornecedor);
+
+        painel.add(new JLabel("Hora Finalizou Pendência:"));
+        painel.add(txtHoraFinalizou);
+
+        painel.add(new JLabel("Número Nota:"));
+        painel.add(txtNumeroNota);
+
+        painel.add(new JLabel("Autorização:"));
+        painel.add(txtAutorizacao);
+
+        painel.add(new JLabel("Status:"));
+        painel.add(cbStatus);
+
+        painel.add(new JLabel("Observação:"));
+        painel.add(new JScrollPane(txtObservacao));
+
+        painel.add(new JLabel("Nota Substituta:"));
+        painel.add(txtNotaSubstituta);
+
+        int opcao = JOptionPane.showConfirmDialog(
+                this,
+                painel,
+                "Alterar Matéria-Prima ID " + id,
+                JOptionPane.OK_CANCEL_OPTION,
+                JOptionPane.PLAIN_MESSAGE
+        );
+
+        if (opcao != JOptionPane.OK_OPTION) {
+            return;
+        }
+
+        if (txtPlaca.getText().trim().isEmpty()) {
+            JOptionPane.showMessageDialog(this, "A placa não pode ficar vazia.");
+            return;
+        }
+
+        if (txtMaterial.getText().trim().isEmpty()) {
+            JOptionPane.showMessageDialog(this, "O material não pode ficar vazio.");
+            return;
+        }
+
+        if (txtFornecedor.getText().trim().isEmpty()) {
+            JOptionPane.showMessageDialog(this, "O fornecedor não pode ficar vazio.");
+            return;
+        }
+
+        String horaAlteracao = LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss"));
+
+        MateriaPrima mp = new MateriaPrima();
+
+        mp.setId(id);
+        mp.setData(txtData.getText());
+        mp.setHoraChegada(txtHoraChegada.getText());
+        mp.setPlaca(txtPlaca.getText().trim().toUpperCase());
+        mp.setMaterial(txtMaterial.getText().trim().toUpperCase());
+        mp.setFornecedor(txtFornecedor.getText().trim().toUpperCase());
+        mp.setHoraFinalizouPendencia(txtHoraFinalizou.getText().trim());
+        mp.setNumeroNota(txtNumeroNota.getText().trim());
+        mp.setAutorizacao(txtAutorizacao.getText().trim());
+        mp.setStatus(cbStatus.getSelectedItem().toString());
+        mp.setObservacao(txtObservacao.getText().trim());
+        mp.setNotaSubstituta(txtNotaSubstituta.getText().trim());
+        mp.setUsuarioAlteracao(usuarioLogado);
+        mp.setHoraAlteracao(horaAlteracao);
+
+        MateriaPrimaDAO dao = new MateriaPrimaDAO();
+        boolean alterou = dao.atualizar(mp);
+
+        if (alterou) {
+            JOptionPane.showMessageDialog(this, "Matéria-prima alterada com sucesso.");
+            carregarMateriaPrima();
+        } else {
+            JOptionPane.showMessageDialog(this, "Erro ao alterar matéria-prima.");
+        }
+    }
+
+    private void excluirOF() {
+
+        int linhaSelecionada = tabelaOF.getSelectedRow();
+
+        if (linhaSelecionada == -1) {
+            JOptionPane.showMessageDialog(this, "Selecione uma OF para excluir.");
+            return;
+        }
+
+        int linhaModelo = tabelaOF.convertRowIndexToModel(linhaSelecionada);
+
+        Object valorId = modeloOF.getValueAt(linhaModelo, 0);
+
+        int id = Integer.parseInt(valorId.toString());
 
         int confirmacao = JOptionPane.showConfirmDialog(
                 this,
-                "Deseja realmente excluir o cadastro ID " + id + "?",
+                "Deseja realmente excluir a OF ID " + id + "?",
                 "Confirmar exclusão",
                 JOptionPane.YES_NO_OPTION
         );
@@ -272,9 +639,46 @@ public class AdminView extends JFrame {
         CadastroDAO dao = new CadastroDAO();
         dao.excluir(id);
 
-        JOptionPane.showMessageDialog(this, "Cadastro excluído com sucesso.");
+        JOptionPane.showMessageDialog(this, "OF excluída com sucesso.");
 
-        carregarCadastros();
+        carregarOF();
+    }
+
+    private void excluirMateriaPrima() {
+
+        int linhaSelecionada = tabelaMateriaPrima.getSelectedRow();
+
+        if (linhaSelecionada == -1) {
+            JOptionPane.showMessageDialog(this, "Selecione um cadastro de matéria-prima para excluir.");
+            return;
+        }
+
+        int linhaModelo = tabelaMateriaPrima.convertRowIndexToModel(linhaSelecionada);
+
+        Object valorId = modeloMateriaPrima.getValueAt(linhaModelo, 0);
+
+        int id = Integer.parseInt(valorId.toString());
+
+        int confirmacao = JOptionPane.showConfirmDialog(
+                this,
+                "Deseja realmente excluir o cadastro de matéria-prima ID " + id + "?",
+                "Confirmar exclusão",
+                JOptionPane.YES_NO_OPTION
+        );
+
+        if (confirmacao != JOptionPane.YES_OPTION) {
+            return;
+        }
+
+        MateriaPrimaDAO dao = new MateriaPrimaDAO();
+        boolean excluiu = dao.excluir(id);
+
+        if (excluiu) {
+            JOptionPane.showMessageDialog(this, "Matéria-prima excluída com sucesso.");
+            carregarMateriaPrima();
+        } else {
+            JOptionPane.showMessageDialog(this, "Erro ao excluir matéria-prima.");
+        }
     }
 
     private void excluirUsuario() {
@@ -290,7 +694,6 @@ public class AdminView extends JFrame {
 
         Object valorId = modeloUsuarios.getValueAt(linhaModelo, 0);
         Object valorUsuario = modeloUsuarios.getValueAt(linhaModelo, 1);
-        Object valorTipo = modeloUsuarios.getValueAt(linhaModelo, 2);
 
         if (valorId == null || valorUsuario == null) {
             JOptionPane.showMessageDialog(this, "Erro: usuário inválido.");
@@ -309,14 +712,7 @@ public class AdminView extends JFrame {
             return;
         }
 
-        int id;
-
-        try {
-            id = Integer.parseInt(valorId.toString());
-        } catch (NumberFormatException e) {
-            JOptionPane.showMessageDialog(this, "Erro: ID inválido.");
-            return;
-        }
+        int id = Integer.parseInt(valorId.toString());
 
         int confirmacao = JOptionPane.showConfirmDialog(
                 this,
@@ -394,13 +790,53 @@ public class AdminView extends JFrame {
         }
 
         UsuarioDAO dao = new UsuarioDAO();
-        boolean alterou = dao.alterarSenhaPorUsuario(usuarioSelecionado, novaSenha);
+        boolean alterou = dao.alterarSenha(usuarioSelecionado, novaSenha);
 
         if (alterou) {
             JOptionPane.showMessageDialog(this, "Senha alterada com sucesso.");
         } else {
             JOptionPane.showMessageDialog(this, "Erro ao alterar senha.");
         }
+    }
+
+    private void configurarLarguraColunasOF() {
+        tabelaOF.getColumnModel().getColumn(0).setPreferredWidth(50);
+        tabelaOF.getColumnModel().getColumn(1).setPreferredWidth(90);
+        tabelaOF.getColumnModel().getColumn(2).setPreferredWidth(120);
+        tabelaOF.getColumnModel().getColumn(3).setPreferredWidth(90);
+        tabelaOF.getColumnModel().getColumn(4).setPreferredWidth(110);
+        tabelaOF.getColumnModel().getColumn(5).setPreferredWidth(120);
+        tabelaOF.getColumnModel().getColumn(6).setPreferredWidth(110);
+        tabelaOF.getColumnModel().getColumn(7).setPreferredWidth(100);
+        tabelaOF.getColumnModel().getColumn(8).setPreferredWidth(120);
+        tabelaOF.getColumnModel().getColumn(9).setPreferredWidth(130);
+        tabelaOF.getColumnModel().getColumn(10).setPreferredWidth(300);
+        tabelaOF.getColumnModel().getColumn(11).setPreferredWidth(130);
+        tabelaOF.getColumnModel().getColumn(12).setPreferredWidth(130);
+        tabelaOF.getColumnModel().getColumn(13).setPreferredWidth(120);
+    }
+
+    private void configurarLarguraColunasMateriaPrima() {
+        tabelaMateriaPrima.getColumnModel().getColumn(0).setPreferredWidth(50);
+        tabelaMateriaPrima.getColumnModel().getColumn(1).setPreferredWidth(90);
+        tabelaMateriaPrima.getColumnModel().getColumn(2).setPreferredWidth(110);
+        tabelaMateriaPrima.getColumnModel().getColumn(3).setPreferredWidth(90);
+        tabelaMateriaPrima.getColumnModel().getColumn(4).setPreferredWidth(160);
+        tabelaMateriaPrima.getColumnModel().getColumn(5).setPreferredWidth(220);
+        tabelaMateriaPrima.getColumnModel().getColumn(6).setPreferredWidth(180);
+        tabelaMateriaPrima.getColumnModel().getColumn(7).setPreferredWidth(120);
+        tabelaMateriaPrima.getColumnModel().getColumn(8).setPreferredWidth(120);
+        tabelaMateriaPrima.getColumnModel().getColumn(9).setPreferredWidth(110);
+        tabelaMateriaPrima.getColumnModel().getColumn(10).setPreferredWidth(300);
+        tabelaMateriaPrima.getColumnModel().getColumn(11).setPreferredWidth(140);
+        tabelaMateriaPrima.getColumnModel().getColumn(12).setPreferredWidth(130);
+        tabelaMateriaPrima.getColumnModel().getColumn(13).setPreferredWidth(130);
+        tabelaMateriaPrima.getColumnModel().getColumn(14).setPreferredWidth(120);
+    }
+
+    private String valorTabela(DefaultTableModel modelo, int linha, int coluna) {
+        Object valor = modelo.getValueAt(linha, coluna);
+        return valor == null ? "" : valor.toString();
     }
 
     private String valorSeguro(String valor) {

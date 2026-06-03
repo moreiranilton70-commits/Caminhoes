@@ -29,10 +29,10 @@ import javax.swing.JTextField;
 import javax.swing.SwingConstants;
 import javax.swing.border.EmptyBorder;
 
-import sistema.dao.CadastroDAO;
-import sistema.model.Cadastro;
+import sistema.dao.MateriaPrimaDAO;
+import sistema.model.MateriaPrima;
 
-public class CadastroView extends JFrame {
+public class MateriaPrimaView extends JFrame {
 
     private static final long serialVersionUID = 1L;
 
@@ -40,14 +40,15 @@ public class CadastroView extends JFrame {
 
     private JTextField txtData;
     private JTextField txtPlaca;
-    private JTextField txtNumeroOF;
-    private JTextField txtHoraCadastro;
-    private JTextField txtNumeroPager;
-    private JTextField txtOfTroca;
-    private JComboBox<String> cbStatus;
+    private JTextField txtMaterial;
+    private JTextField txtFornecedor;
+    private JTextField txtHoraChegada;
+    private JTextField txtHoraFinalizouPendencia;
+    private JTextField txtNumeroNota;
     private JTextField txtAutorizacao;
-    private JTextField txtHoraAutorizacao;
+    private JComboBox<String> cbStatus;
     private JTextArea txtObservacao;
+    private JTextField txtNotaSubstituta;
 
     private JButton btnSalvar;
     private JButton btnConsultar;
@@ -56,10 +57,10 @@ public class CadastroView extends JFrame {
 
     private String usuarioLogado;
 
-    public CadastroView(String usuarioLogado) {
+    public MateriaPrimaView(String usuarioLogado) {
         this.usuarioLogado = usuarioLogado;
 
-        setTitle("Cadastro de Caminhões - Usuário: " + usuarioLogado);
+        setTitle("Cadastro de Matéria-Prima - Usuário: " + usuarioLogado);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setExtendedState(JFrame.MAXIMIZED_BOTH);
         setMinimumSize(new Dimension(1000, 700));
@@ -75,8 +76,7 @@ public class CadastroView extends JFrame {
         painelFundo.setLayout(new BorderLayout());
         setContentPane(painelFundo);
 
-        JPanel topo = criarTopo();
-        painelFundo.add(topo, BorderLayout.NORTH);
+        painelFundo.add(criarTopo(), BorderLayout.NORTH);
 
         JPanel centro = new JPanel(new GridBagLayout());
         centro.setOpaque(false);
@@ -86,9 +86,7 @@ public class CadastroView extends JFrame {
         centro.add(cardFormulario);
 
         painelFundo.add(centro, BorderLayout.CENTER);
-
-        JPanel rodape = criarRodape();
-        painelFundo.add(rodape, BorderLayout.SOUTH);
+        painelFundo.add(criarRodape(), BorderLayout.SOUTH);
 
         configurarEventos();
     }
@@ -99,7 +97,7 @@ public class CadastroView extends JFrame {
         topo.setOpaque(false);
         topo.setBorder(new EmptyBorder(25, 40, 10, 40));
 
-        JLabel titulo = new JLabel("Cadastro de Caminhões", SwingConstants.CENTER);
+        JLabel titulo = new JLabel("Cadastro de Matéria-Prima", SwingConstants.CENTER);
         titulo.setFont(new Font("Segoe UI", Font.BOLD, 34));
         titulo.setForeground(Color.WHITE);
 
@@ -129,26 +127,25 @@ public class CadastroView extends JFrame {
         txtData = criarCampoTexto(fonteCampo);
         txtData.setEditable(false);
 
-        txtHoraCadastro = criarCampoTexto(fonteCampo);
-        txtHoraCadastro.setEditable(false);
+        txtHoraChegada = criarCampoTexto(fonteCampo);
+        txtHoraChegada.setEditable(false);
 
         txtPlaca = criarCampoTexto(fonteCampo);
-        txtNumeroOF = criarCampoTexto(fonteCampo);
-        txtNumeroPager = criarCampoTexto(fonteCampo);
-        txtOfTroca = criarCampoTexto(fonteCampo);
+        txtMaterial = criarCampoTexto(fonteCampo);
+        txtFornecedor = criarCampoTexto(fonteCampo);
+        txtHoraFinalizouPendencia = criarCampoTexto(fonteCampo);
+        txtNumeroNota = criarCampoTexto(fonteCampo);
+        txtAutorizacao = criarCampoTexto(fonteCampo);
+        txtNotaSubstituta = criarCampoTexto(fonteCampo);
 
         cbStatus = new JComboBox<>(new String[] {
-                "OK",
-                "Pendente",
-                "Aguardando",
-                "Finalizado"
+                "LIBERADO",
+                "AGUARDANDO",
+                "RECUSADO"
         });
         cbStatus.setFont(fonteCampo);
         cbStatus.setPreferredSize(new Dimension(300, 38));
         cbStatus.setBackground(Color.WHITE);
-
-        txtAutorizacao = criarCampoTexto(fonteCampo);
-        txtHoraAutorizacao = criarCampoTexto(fonteCampo);
 
         txtObservacao = new JTextArea(4, 20);
         txtObservacao.setFont(fonteCampo);
@@ -159,18 +156,19 @@ public class CadastroView extends JFrame {
         atualizarDataHora();
 
         adicionarCampo(card, 0, 0, "Data:", txtData, fonteLabel);
-        adicionarCampo(card, 0, 2, "Hora Cadastro:", txtHoraCadastro, fonteLabel);
+        adicionarCampo(card, 0, 2, "Hora Chegada:", txtHoraChegada, fonteLabel);
 
         adicionarCampo(card, 1, 0, "Placa:", txtPlaca, fonteLabel);
-        adicionarCampo(card, 1, 2, "Número OF:", txtNumeroOF, fonteLabel);
+        adicionarCampo(card, 1, 2, "Material:", txtMaterial, fonteLabel);
 
-        adicionarCampo(card, 2, 0, "Número Pager:", txtNumeroPager, fonteLabel);
-        adicionarCampo(card, 2, 2, "OF de Troca:", txtOfTroca, fonteLabel);
+        adicionarCampo(card, 2, 0, "Fornecedor:", txtFornecedor, fonteLabel);
+        adicionarCampo(card, 2, 2, "Número Nota:", txtNumeroNota, fonteLabel);
 
         adicionarCampo(card, 3, 0, "Status:", cbStatus, fonteLabel);
         adicionarCampo(card, 3, 2, "Autorização:", txtAutorizacao, fonteLabel);
 
-        adicionarCampo(card, 4, 0, "Hora Autorização:", txtHoraAutorizacao, fonteLabel);
+        adicionarCampo(card, 4, 0, "Hora Finalizou Pendência:", txtHoraFinalizouPendencia, fonteLabel);
+        adicionarCampo(card, 4, 2, "Nota Substituta:", txtNotaSubstituta, fonteLabel);
 
         adicionarObservacao(card, fonteLabel);
 
@@ -290,7 +288,7 @@ public class CadastroView extends JFrame {
         btnSalvar.addActionListener(e -> salvar());
 
         btnConsultar.addActionListener(e -> {
-            new ConsultaView(usuarioLogado).setVisible(true);
+            new ConsultaMateriaPrimaView(usuarioLogado).setVisible(true);
         });
 
         btnAtualizarDataHora.addActionListener(e -> {
@@ -305,9 +303,8 @@ public class CadastroView extends JFrame {
     }
 
     private void atualizarDataHora() {
-
         txtData.setText(LocalDate.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")));
-        txtHoraCadastro.setText(LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm")));
+        txtHoraChegada.setText(LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm")));
     }
 
     private void salvar() {
@@ -320,24 +317,37 @@ public class CadastroView extends JFrame {
             return;
         }
 
-        Cadastro c = new Cadastro();
+        if (txtMaterial.getText().trim().isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Informe o material.");
+            txtMaterial.requestFocus();
+            return;
+        }
 
-        c.setData(txtData.getText());
-        c.setPlaca(txtPlaca.getText().trim().toUpperCase());
-        c.setNumeroOF(txtNumeroOF.getText().trim());
-        c.setHoraCadastro(txtHoraCadastro.getText());
-        c.setNumeroPager(txtNumeroPager.getText().trim());
-        c.setOfTroca(txtOfTroca.getText().trim());
-        c.setStatus(cbStatus.getSelectedItem().toString());
-        c.setAutorizacao(txtAutorizacao.getText().trim());
-        c.setHoraAutorizacao(txtHoraAutorizacao.getText().trim());
-        c.setObservacao(txtObservacao.getText().trim());
-        c.setUsuario(usuarioLogado);
+        if (txtFornecedor.getText().trim().isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Informe o fornecedor.");
+            txtFornecedor.requestFocus();
+            return;
+        }
 
-        CadastroDAO dao = new CadastroDAO();
-        dao.inserir(c);
+        MateriaPrima mp = new MateriaPrima();
 
-        JOptionPane.showMessageDialog(this, "Cadastro salvo com sucesso!");
+        mp.setData(txtData.getText());
+        mp.setPlaca(txtPlaca.getText().trim().toUpperCase());
+        mp.setMaterial(txtMaterial.getText().trim().toUpperCase());
+        mp.setFornecedor(txtFornecedor.getText().trim().toUpperCase());
+        mp.setHoraChegada(txtHoraChegada.getText());
+        mp.setHoraFinalizouPendencia(txtHoraFinalizouPendencia.getText().trim());
+        mp.setNumeroNota(txtNumeroNota.getText().trim());
+        mp.setAutorizacao(txtAutorizacao.getText().trim());
+        mp.setStatus(cbStatus.getSelectedItem().toString());
+        mp.setObservacao(txtObservacao.getText().trim());
+        mp.setNotaSubstituta(txtNotaSubstituta.getText().trim());
+        mp.setUsuario(usuarioLogado);
+
+        MateriaPrimaDAO dao = new MateriaPrimaDAO();
+        dao.inserir(mp);
+
+        JOptionPane.showMessageDialog(this, "Cadastro de matéria-prima salvo com sucesso!");
 
         limparCampos();
     }
@@ -347,13 +357,14 @@ public class CadastroView extends JFrame {
         atualizarDataHora();
 
         txtPlaca.setText("");
-        txtNumeroOF.setText("");
-        txtNumeroPager.setText("");
-        txtOfTroca.setText("");
-        cbStatus.setSelectedIndex(0);
+        txtMaterial.setText("");
+        txtFornecedor.setText("");
+        txtHoraFinalizouPendencia.setText("");
+        txtNumeroNota.setText("");
         txtAutorizacao.setText("");
-        txtHoraAutorizacao.setText("");
+        cbStatus.setSelectedIndex(0);
         txtObservacao.setText("");
+        txtNotaSubstituta.setText("");
 
         txtPlaca.requestFocus();
     }
@@ -367,7 +378,14 @@ public class CadastroView extends JFrame {
         public BackgroundPanel(String caminhoImagem) {
             try {
                 ImageIcon icon = new ImageIcon(caminhoImagem);
-                imagemFundo = icon.getImage();
+
+                if (icon.getIconWidth() > 0) {
+                    imagemFundo = icon.getImage();
+                } else {
+                    imagemFundo = null;
+                    System.out.println("Imagem de fundo não encontrada: " + caminhoImagem);
+                }
+
             } catch (Exception e) {
                 imagemFundo = null;
             }
